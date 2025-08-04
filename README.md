@@ -72,8 +72,8 @@ res://addons/rename_tool/config.cfg
 
 ```ini
 [settings]
-dirs=["res://assets/"]
-extensions=[".png", ".tscn", ".json"]
+dirs=PackedStringArray("res://assets/")
+extensions=PackedStringArray(".png", ".tscn", ".json", ".ttf")
 camel_case_regex="([a-z0-9])([A-Z])"
 separator_regex="[\s\-]+"
 custom_regex_enabled=false
