@@ -2,7 +2,7 @@
 using System.Linq;
 using Godot;
 
-namespace rename_tool_plugin.addons.rename_tool;
+
 
 /// <summary>
 /// RenameToolPanel 是一个用于资源重命名工具的面板界面，提供目录、扩展名配置以及自定义正则表达式的功能。
@@ -360,7 +360,7 @@ public partial class RenameToolPanel : VBoxContainer
         // 过滤非法扩展名（必须以 . 开头、且长度 > 1）
         var validExtensions = extensions
             .ConvertAll(e => e.Trim().ToLowerInvariant())
-            .FindAll(e => !string.IsNullOrEmpty(e) && e.StartsWith(".") && e.Length > 1);
+            .FindAll(e => !string.IsNullOrEmpty(e) && e.StartsWith($".") && e.Length > 1);
 
         if (validDirs.Count == 0 || validExtensions.Count == 0)
         {

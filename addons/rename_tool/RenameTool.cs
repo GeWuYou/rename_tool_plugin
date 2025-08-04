@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Godot;
 
-namespace rename_tool_plugin.addons.rename_tool;
+
 
 /// <summary>
 /// 批量重命名资源文件的编辑器插件工具。
