@@ -1,100 +1,75 @@
-﻿using System.Collections.Generic;
+#if TOOLS
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Godot;
-
-
 
 /// <summary>
 /// RenameToolPanel 是一个用于资源重命名工具的面板界面，提供目录、扩展名配置以及自定义正则表达式的功能。
 /// </summary>
-public partial class RenameToolPanel : VBoxContainer
+[Tool]
+public partial class RenameToolPanel : PanelContainer
 {
-    private VBoxContainer _dirList;
-    private VBoxContainer _extList;
     private const string ConfigKey = "settings";
 
     private const string ExtensionsKey = "extensions";
 
     private const string DirsKey = "dirs";
 
-    private const string ConfigFilePath = "res://addons/rename_tool/config.cfg";
+    private const string ConfigFilePath = $"res://addons/rename_tool/config.cfg";
 
     private const string CamelRegexKey = "camel_case_regex";
     private const string SeparatorRegexKey = "separator_regex";
     private const string CustomRegexEnable = "custom_regex_enabled";
 
+    [Export] [ExportCategory("驼峰正则输入")] private LineEdit _camelCaseRegexInput;
+    [Export] [ExportCategory("文件夹列表")] private VBoxContainer _dirList;
+
+    [Export] [ExportCategory("启用自定义正则表达式单选框")]
+    private CheckBox _enableCustomRegexCheckBox;
+
+    [Export] [ExportCategory("扩展名列表")] private VBoxContainer _extList;
+    [Export] [ExportCategory("根容器")] private VBoxContainer _root;
+    [Export] [ExportCategory("分割正则输入")] private LineEdit _separatorRegexInput;
+
     /// <summary>
     /// 获取开始重命名按钮的引用。
     /// </summary>
+    [Export]
+    [ExportCategory("重命名按钮")]
     public Button RenameButton { get; private set; }
 
-    private Button SaveConfigButton { get; set; }
+    [Export] [ExportCategory("添加文件夹按钮")] private Button AddDirButton { get; set; }
 
-    private Button ResetConfigButton { get; set; }
+    [Export] [ExportCategory("添加扩展名按钮")] private Button AddExtensionButton { get; set; }
 
-    private Button LoadConfigButton { get; set; }
+    [Export] [ExportCategory("保存配置按钮")] private Button SaveConfigButton { get; set; }
 
-    private CheckBox _enableCustomRegexCheckBox;
-    private LineEdit _camelCaseRegexInput;
-    private LineEdit _separatorRegexInput;
+    [Export] [ExportCategory("重置配置按钮")] private Button ResetConfigButton { get; set; }
 
+    [Export] [ExportCategory("加载配置按钮")] private Button LoadConfigButton { get; set; }
 
-    /// <summary>
-    /// 初始化 RenameToolPanel 实例并调用 Init 方法进行初始化。
-    /// </summary>
-    public RenameToolPanel() => Init();
+    [GeneratedRegex("([a-z0-9])([A-Z])", RegexOptions.Compiled)]
+    private static partial Regex CamelCaseRegex();
 
-    /// <summary>
-    /// 初始化面板控件和界面元素。
-    /// </summary>
-    private void Init()
+    [GeneratedRegex(@"[\s\-]+", RegexOptions.Compiled)]
+    private static partial Regex SeparatorRegex();
+
+    public override void _Ready()
     {
-        _dirList = new VBoxContainer();
-        _extList = new VBoxContainer();
-        AddTitle();
-        var root = AddPanelRoot();
-        AddDirectoryInputs(root, []); // 先创建空内容
-        AddExtensionInputs(root, []);
-        InitCustomRegexSection(root);
-        AddControlButtons(root);
+        InitCustomRegexSection();
+        InitControlButtons();
         ReloadFromConfig();
     }
 
-    /// <summary>
-    /// 创建一个带标题的分组容器（VBoxContainer）
-    /// </summary>
-    /// <param name="title">小节标题</param>
-    /// <returns>包含标题与空内容容器的 VBox</returns>
-    private VBoxContainer CreateGroupSection(string title)
-    {
-        var group = new VBoxContainer
-        {
-            CustomMinimumSize = new Vector2(0, 10),
-        };
-
-        var label = new Label
-        {
-            Text = title,
-            HorizontalAlignment = HorizontalAlignment.Left,
-            CustomMinimumSize = new Vector2(0, 24),
-        };
-
-        group.AddChild(label);
-        return group;
-    }
 
     /// <summary>
     /// 初始化自定义正则表达式输入区域。
     /// </summary>
-    /// <param name="root">父容器控件</param>
-    private void InitCustomRegexSection(VBoxContainer root)
+    private void InitCustomRegexSection()
     {
-        var group = CreateGroupSection("🧩 自定义正则配置");
-
-        _enableCustomRegexCheckBox = new CheckBox { Text = "启用自定义正则规则" };
-        _camelCaseRegexInput = new LineEdit { PlaceholderText = @"CamelCase 拆分: 默认 ([a-z0-9])([A-Z])" };
-        _separatorRegexInput = new LineEdit { PlaceholderText = @"分隔符替换: 默认 [\s\-]+" };
-
         _camelCaseRegexInput.Editable = false;
         _separatorRegexInput.Editable = false;
 
@@ -103,112 +78,18 @@ public partial class RenameToolPanel : VBoxContainer
             _camelCaseRegexInput.Editable = enabled;
             _separatorRegexInput.Editable = enabled;
         };
-
-        group.AddChild(_enableCustomRegexCheckBox);
-        group.AddChild(_camelCaseRegexInput);
-        group.AddChild(_separatorRegexInput);
-
-        root.AddChild(group);
     }
 
 
     /// <summary>
-    /// 添加标题标签到面板顶部。
+    /// 初始化控制按钮（保存、重置、加载等）。
     /// </summary>
-    private void AddTitle()
+    private void InitControlButtons()
     {
-        AddChild(new Label
-        {
-            Text = "⚙️ 插件配置",
-            HorizontalAlignment = HorizontalAlignment.Center,
-            CustomMinimumSize = new Vector2(0, 24)
-        });
-    }
-
-    /// <summary>
-    /// 创建并添加主面板容器。
-    /// </summary>
-    /// <returns>返回创建的 VBoxContainer 容器</returns>
-    private VBoxContainer AddPanelRoot()
-    {
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = new Color(0.15f, 0.15f, 0.15f) });
-
-        var root = new VBoxContainer();
-        panel.AddChild(root);
-        AddChild(panel);
-        return root;
-    }
-
-    /// <summary>
-    /// 添加目录输入控件。
-    /// </summary>
-    /// <param name="root">父容器控件</param>
-    /// <param name="savedDirs">已保存的目录列表</param>
-    private void AddDirectoryInputs(VBoxContainer root, List<string> savedDirs)
-    {
-        var group = CreateGroupSection("📁 处理目录列表（res:// 开头）");
-        group.AddChild(_dirList);
-
-        if (savedDirs.Count == 0)
-            AddDirInput("res://assets/");
-        else
-            foreach (var dir in savedDirs)
-                AddDirInput(dir);
-
-        var addDirBtn = new Button { Text = "➕ 添加目录" };
-        addDirBtn.Pressed += () => AddDirInput("");
-        group.AddChild(addDirBtn);
-
-        root.AddChild(group);
-    }
-
-    /// <summary>
-    /// 添加扩展名输入控件。
-    /// </summary>
-    /// <param name="root">父容器控件</param>
-    /// <param name="savedExtensions">已保存的扩展名列表</param>
-    private void AddExtensionInputs(VBoxContainer root, List<string> savedExtensions)
-    {
-        var group = CreateGroupSection("📄 处理扩展名列表（如 .png）");
-        group.AddChild(_extList);
-
-        if (savedExtensions.Count == 0)
-        {
-            AddExtInput(".png");
-            AddExtInput(".tscn");
-            AddExtInput(".json");
-        }
-        else
-        {
-            foreach (var ext in savedExtensions)
-                AddExtInput(ext);
-        }
-
-        var addExtBtn = new Button { Text = "➕ 添加扩展名" };
-        addExtBtn.Pressed += () => AddExtInput("");
-        group.AddChild(addExtBtn);
-
-        root.AddChild(group);
-    }
-
-    /// <summary>
-    /// 添加控制按钮（保存、重置、加载等）。
-    /// </summary>
-    /// <param name="root">父容器控件</param>
-    private void AddControlButtons(VBoxContainer root)
-    {
-        var group = CreateGroupSection("⚙️ 控制操作");
-
-        RenameButton = new Button { Text = "✅ 开始重命名" };
+        AddDirButton.Pressed += () => AddDirInput("");
+        AddExtensionButton.Pressed += () => AddExtInput("");
         RenameButton.Pressed += () => SaveConfigToFile(GetDirectories(), GetExtensions());
-        group.AddChild(RenameButton);
-
-        SaveConfigButton = new Button { Text = "💾 保存配置" };
         SaveConfigButton.Pressed += () => SaveConfigToFile(GetDirectories(), GetExtensions());
-        group.AddChild(SaveConfigButton);
-
-        ResetConfigButton = new Button { Text = "♻️ 重置为默认" };
         ResetConfigButton.Pressed += () =>
         {
             _dirList.GetChildren().ToList().ForEach(n => n.QueueFree());
@@ -218,13 +99,8 @@ public partial class RenameToolPanel : VBoxContainer
             AddExtInput(".tscn");
             AddExtInput(".json");
         };
-        group.AddChild(ResetConfigButton);
-
-        LoadConfigButton = new Button { Text = "📂 加载配置" };
         LoadConfigButton.Pressed += ReloadFromConfig;
-        group.AddChild(LoadConfigButton);
-
-        root.AddChild(group);
+        RenameButton.Pressed += RenameResources;
     }
 
 
@@ -449,6 +325,143 @@ public partial class RenameToolPanel : VBoxContainer
         _separatorRegexInput.Editable = enabled;
     }
 
+
+    /// <summary>
+    /// 菜单项点击后的处理函数。
+    /// 执行资源文件的批量重命名，并弹出提示对话框告知用户操作完成。
+    /// </summary>
+    private void RenameResources()
+    {
+        var fs = EditorInterface.Singleton.GetResourceFilesystem();
+        RenameFilesRecursive(fs.GetFilesystem());
+
+        GD.Print("[RenameTool] 重命名完成。可手动刷新资源面板查看效果。");
+        var dialog = new AcceptDialog
+        {
+            Title = "重命名完成",
+            DialogText = "资源文件命名已统一为下划线风格。"
+        };
+        EditorInterface.Singleton.GetBaseControl().AddChild(dialog);
+        dialog.PopupCentered();
+    }
+
+    /// <summary>
+    /// 递归遍历目录结构并重命名其中的文件。
+    /// 对每个文件尝试将其名称转换为 snake_case 风格。
+    /// </summary>
+    /// <param name="dir">当前处理的目录对象</param>
+    private void RenameFilesRecursive(EditorFileSystemDirectory dir)
+    {
+        // 遍历当前目录下的所有文件
+        for (var i = 0; i < dir.GetFileCount(); i++)
+        {
+            var originalPath = dir.GetFilePath(i);
+            if (!ShouldProcessFile(originalPath)) continue;
+            var newFileName = ToSnakeCase(Path.GetFileName(originalPath));
+            if (newFileName == Path.GetFileName(originalPath)) continue;
+            // 获取 Godot 路径（res://...）中的目录部分
+            // 确保 godotDir 是以 res:// 开头的目录路径
+            var godotDir = originalPath.GetBaseDir();
+
+            // 拼接 Godot 资源路径
+            var godotNewPath = $"{godotDir}/{newFileName}";
+
+            // 获取磁盘绝对路径
+            var absDir = ProjectSettings.GlobalizePath(godotDir);
+            var absOldPath = ProjectSettings.GlobalizePath(originalPath);
+            var absNewPath = Path.Combine(absDir, newFileName).Replace("\\", "/");
+
+            GD.Print($"[Debug] originalPath: {originalPath}");
+            GD.Print($"[Debug] godotDir: {godotDir}");
+            GD.Print($"[Debug] godotNewPath: {godotNewPath}");
+            GD.Print($"[Debug] absDir: {absDir}");
+            GD.Print($"[Debug] absOldPath: {absOldPath}");
+            GD.Print($"[Debug] absNewPath: {absNewPath}");
+
+            try
+            {
+                GD.Print($"[RenameTool] Renaming: {originalPath} -> {godotNewPath}");
+
+                var accessDir = DirAccess.Open(ProjectSettings.GlobalizePath(godotDir));
+                if (accessDir != null)
+                {
+                    var err = accessDir.Rename(absOldPath, absNewPath);
+                    if (err != Error.Ok)
+                    {
+                        GD.PrintErr($"[RenameTool] Failed to rename {originalPath}: Error {err}");
+                    }
+                }
+                else
+                {
+                    GD.PrintErr($"[RenameTool] Failed to open directory: {ProjectSettings.GlobalizePath(godotDir)}");
+                }
+            }
+            catch (Exception e)
+            {
+                GD.PrintErr($"[RenameTool] Exception while renaming {originalPath}: {e.Message}: {e}");
+            }
+        }
+
+        // 递归处理子目录
+        for (var i = 0; i < dir.GetSubdirCount(); i++)
+        {
+            RenameFilesRecursive(dir.GetSubdir(i));
+        }
+    }
+
+    /// <summary>
+    /// 判断指定路径的文件是否应该被处理。
+    /// 根据面板设置的目录和扩展名过滤条件进行判断。
+    /// </summary>
+    /// <param name="path">文件的完整路径</param>
+    /// <returns>如果文件应被处理返回 true，否则返回 false</returns>
+    private bool ShouldProcessFile(string path)
+    {
+        if (!GetDirectories().Any(path.StartsWith))
+        {
+            return false;
+        }
+
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        return GetExtensions().Contains(ext);
+    }
+
+    /// <summary>
+    /// 将输入字符串转换为 snake_case 格式。
+    /// 支持 CamelCase、空格、连字符等格式转为小写下划线形式。
+    /// </summary>
+    /// <param name="input">原始文件名（含扩展名）</param>
+    /// <returns>转换后的 snake_case 文件名（保留原扩展名）</returns>
+    private string ToSnakeCase(string input)
+    {
+        var name = Path.GetFileNameWithoutExtension(input);
+        var ext = Path.GetExtension(input);
+
+        var camel = CamelCaseRegex();
+        var sep = SeparatorRegex();
+
+        if (IsCustomRegexEnabled())
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(GetCamelCaseRegex()))
+                    camel = new Regex(GetCamelCaseRegex());
+
+                if (!string.IsNullOrWhiteSpace(GetSeparatorRegex()))
+                    sep = new Regex(GetSeparatorRegex());
+            }
+            catch (Exception e)
+            {
+                GD.PrintErr("[RenameTool] 使用用户正则失败，降级为默认：", e.Message);
+            }
+        }
+
+        name = camel.Replace(name, "$1_$2");
+        name = sep.Replace(name, "_");
+
+        return name.ToLowerInvariant() + ext;
+    }
+
     /// <summary>
     /// 获取 CamelCase 正则表达式字符串。
     /// </summary>
@@ -467,3 +480,4 @@ public partial class RenameToolPanel : VBoxContainer
     /// <returns>true 表示启用，false 表示未启用</returns>
     public bool IsCustomRegexEnabled() => _enableCustomRegexCheckBox.ButtonPressed;
 }
+#endif

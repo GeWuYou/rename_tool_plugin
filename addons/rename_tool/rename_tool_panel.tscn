@@ -1,0 +1,117 @@
+[gd_scene load_steps=3 format=3 uid="uid://brsujis6akiix"]
+
+[ext_resource type="Script" uid="uid://c4cjtp684danu" path="res://addons/rename_tool/RenameToolPanel.cs" id="1_wbrvn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_g71ur"]
+bg_color = Color(0.15, 0.15, 0.15, 1)
+
+[node name="RenameToolPanel" type="PanelContainer" node_paths=PackedStringArray("_root", "_dirList", "_extList", "RenameButton", "AddDirButton", "AddExtensionButton", "SaveConfigButton", "ResetConfigButton", "LoadConfigButton", "_enableCustomRegexCheckBox", "_camelCaseRegexInput", "_separatorRegexInput")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = 277.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_g71ur")
+script = ExtResource("1_wbrvn")
+_root = NodePath("Root")
+_dirList = NodePath("Root/DirectoryInputs/DirectoryList")
+_extList = NodePath("Root/ExtensionInputs/ExtensionNameList")
+RenameButton = NodePath("Root/ControlButtons/RenameButton")
+AddDirButton = NodePath("Root/DirectoryInputs/AddDirectoryButton")
+AddExtensionButton = NodePath("Root/ExtensionInputs/AddExtensionButton")
+SaveConfigButton = NodePath("Root/ControlButtons/SaveConfigButton")
+ResetConfigButton = NodePath("Root/ControlButtons/ResetConfigButton")
+LoadConfigButton = NodePath("Root/ControlButtons/LoadConfigButton")
+_enableCustomRegexCheckBox = NodePath("Root/CustomRegexSection/EnableCustomRegexCheckBox")
+_camelCaseRegexInput = NodePath("Root/CustomRegexSection/CamelCaseRegexInput")
+_separatorRegexInput = NodePath("Root/CustomRegexSection/SeparatorRegexInput")
+
+[node name="Root" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+text = "⚙️ 插件配置"
+horizontal_alignment = 1
+
+[node name="DirectoryInputs" type="VBoxContainer" parent="Root"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/DirectoryInputs"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+text = "📁 处理目录列表（res:// 开头）"
+
+[node name="DirectoryList" type="VBoxContainer" parent="Root/DirectoryInputs"]
+layout_mode = 2
+
+[node name="AddDirectoryButton" type="Button" parent="Root/DirectoryInputs"]
+layout_mode = 2
+text = "➕ 添加目录"
+
+[node name="ExtensionInputs" type="VBoxContainer" parent="Root"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/ExtensionInputs"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+text = "📄 处理扩展名列表（如 .png）"
+
+[node name="ExtensionNameList" type="VBoxContainer" parent="Root/ExtensionInputs"]
+layout_mode = 2
+
+[node name="AddExtensionButton" type="Button" parent="Root/ExtensionInputs"]
+layout_mode = 2
+text = "➕ 添加扩展名"
+
+[node name="CustomRegexSection" type="VBoxContainer" parent="Root"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/CustomRegexSection"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+text = "🧩 自定义正则配置"
+
+[node name="EnableCustomRegexCheckBox" type="CheckBox" parent="Root/CustomRegexSection"]
+layout_mode = 2
+text = "启用自定义正则规则"
+
+[node name="CamelCaseRegexInput" type="LineEdit" parent="Root/CustomRegexSection"]
+layout_mode = 2
+placeholder_text = "驼峰拆分: 默认 ([a-z0-9])([A-Z])"
+editable = false
+
+[node name="SeparatorRegexInput" type="LineEdit" parent="Root/CustomRegexSection"]
+layout_mode = 2
+placeholder_text = "分隔符替换: 默认 [\\s\\-]+"
+editable = false
+
+[node name="ControlButtons" type="VBoxContainer" parent="Root"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/ControlButtons"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+text = "⚙️ 控制操作"
+
+[node name="RenameButton" type="Button" parent="Root/ControlButtons"]
+layout_mode = 2
+text = "✅ 开始重命名"
+
+[node name="SaveConfigButton" type="Button" parent="Root/ControlButtons"]
+layout_mode = 2
+text = "💾 保存配置"
+
+[node name="ResetConfigButton" type="Button" parent="Root/ControlButtons"]
+layout_mode = 2
+text = "♻️ 重置为默认"
+
+[node name="LoadConfigButton" type="Button" parent="Root/ControlButtons"]
+layout_mode = 2
+text = "📂 加载配置"
