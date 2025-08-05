@@ -57,6 +57,9 @@ public partial class RenameToolPanel : PanelContainer
     [GeneratedRegex(@"[\s\-]+", RegexOptions.Compiled)]
     private static partial Regex SeparatorRegex();
 
+    /// <summary>
+    /// 初始化面板控件和事件绑定。
+    /// </summary>
     public override void _Ready()
     {
         InitCustomRegexSection();
@@ -67,6 +70,7 @@ public partial class RenameToolPanel : PanelContainer
 
     /// <summary>
     /// 初始化自定义正则表达式输入区域。
+    /// 默认情况下输入框不可编辑，当启用自定义正则复选框被勾选时才可编辑。
     /// </summary>
     private void InitCustomRegexSection()
     {
@@ -83,6 +87,7 @@ public partial class RenameToolPanel : PanelContainer
 
     /// <summary>
     /// 初始化控制按钮（保存、重置、加载等）。
+    /// 绑定各个按钮的点击事件处理逻辑。
     /// </summary>
     private void InitControlButtons()
     {
@@ -106,6 +111,8 @@ public partial class RenameToolPanel : PanelContainer
 
     /// <summary>
     /// 从配置文件重新加载目录和扩展名设置。
+    /// 清空当前界面中的输入项，并根据配置文件内容重新填充。
+    /// 若无配置文件或配置为空，则使用默认值。
     /// </summary>
     private void ReloadFromConfig()
     {
@@ -189,9 +196,10 @@ public partial class RenameToolPanel : PanelContainer
 
     /// <summary>
     /// 获取所有有效的目录路径。
+    /// 忽略空白或无效的输入项。
     /// </summary>
     /// <returns>返回目录路径列表</returns>
-    public List<string> GetDirectories()
+    private List<string> GetDirectories()
     {
         var list = new List<string>();
         foreach (var child in _dirList.GetChildren())
@@ -206,9 +214,10 @@ public partial class RenameToolPanel : PanelContainer
 
     /// <summary>
     /// 获取所有有效的扩展名。
+    /// 忽略空白或无效的输入项，并统一转为小写。
     /// </summary>
     /// <returns>返回扩展名列表</returns>
-    public List<string> GetExtensions()
+    private List<string> GetExtensions()
     {
         var list = new List<string>();
         foreach (var child in _extList.GetChildren())
@@ -223,6 +232,7 @@ public partial class RenameToolPanel : PanelContainer
 
     /// <summary>
     /// 将当前配置保存到文件中。
+    /// 包括目录、扩展名、自定义正则表达式等信息。
     /// </summary>
     /// <param name="dirs">要保存的目录列表</param>
     /// <param name="extensions">要保存的扩展名列表</param>
@@ -466,18 +476,18 @@ public partial class RenameToolPanel : PanelContainer
     /// 获取 CamelCase 正则表达式字符串。
     /// </summary>
     /// <returns>CamelCase 正则表达式字符串</returns>
-    public string GetCamelCaseRegex() => _camelCaseRegexInput.Text.Trim();
+    private string GetCamelCaseRegex() => _camelCaseRegexInput.Text.Trim();
 
     /// <summary>
     /// 获取分隔符替换正则表达式字符串。
     /// </summary>
     /// <returns>分隔符替换正则表达式字符串</returns>
-    public string GetSeparatorRegex() => _separatorRegexInput.Text.Trim();
+    private string GetSeparatorRegex() => _separatorRegexInput.Text.Trim();
 
     /// <summary>
     /// 判断是否启用了自定义正则表达式。
     /// </summary>
     /// <returns>true 表示启用，false 表示未启用</returns>
-    public bool IsCustomRegexEnabled() => _enableCustomRegexCheckBox.ButtonPressed;
+    private bool IsCustomRegexEnabled() => _enableCustomRegexCheckBox.ButtonPressed;
 }
 #endif
