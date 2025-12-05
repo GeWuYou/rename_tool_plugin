@@ -12,7 +12,7 @@ config_version=5
 
 config/name="rename_tool_plugin"
 run/main_scene="uid://cmqwadbor6m6w"
-config/features=PackedStringArray("4.4", "C#", "Forward Plus")
+config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 
 [dotnet]
 
